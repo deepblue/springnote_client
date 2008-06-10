@@ -1,0 +1,7 @@
+History.txt
+License.txt
+Manifest.txt
+README.txt
+lib/springnote_client.rb
+lib/springnote_client/base.rb
+lib/springnote_client/version.rb
