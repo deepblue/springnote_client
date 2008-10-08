@@ -23,8 +23,8 @@ module Springnote
     class << self
       def build(hsh, holder)
         new_resource(collection_url(holder), holder, hsh)
-      end      
-      
+      end
+            
       def new_resource(url, holder, hash = nil)
         ret = new(url, holder.username, holder.password)
         ret.holder = holder
@@ -32,18 +32,20 @@ module Springnote
         if block_given?
           ret.hash = yield(ret)
         elsif hash
+          identifier = hash.delete('identifier')
           ret.hash = hash
+          ret.identifier = identifier if identifier
         end
 
         ret
       end
       
       def element_url(holder, id, params = {})
-        holder.url("/#{collection_name}/#{id}", params)
+        holder.make_url("/#{collection_name}/#{id}", params)
       end
 
       def collection_url(holder, params = {})
-        holder.url("/#{collection_name}", params)
+        holder.make_url("/#{collection_name}", params)
       end      
       
       def find(*args)
@@ -59,20 +61,34 @@ module Springnote
           Hash.from_xml(ret.get(:accept => XML))[ret.singular_name]
         end
       end
+      
+      def find_all(holder)
+        find_multi(holder)
+      end
 
       def find_some(ids, holder)
-        ret = new_resource(collection_url(holder, :identifiers => ids.join(','), :detail => true), holder).get(:accept => 'application/xml')
+        find_multi(holder, :identifiers => ids.join(','), :detail => true)
+      end
+      
+      def find_multi(holder, params = {})
+        target = collection_url(holder, params)
+        ret = new_resource(target, holder).get(:accept => 'application/xml')
+
         Hash.from_xml(ret)[collection_name].map do |item|
           new_resource(element_url(holder, item['identifier']), holder, item)
         end
       rescue RuntimeError
         []  
       end
+      
+      def search(query, holder)
+        find_multi(holder, :q => query)
+      end
     end 
-    
+
     def method_missing(method, *args)
       str = method.to_s
-      str[-1] == ?= ?
+      (str[-1].to_s == "=") ?
         @hash[str[0..-2]] = args[0] : 
         @hash[str]
     end
@@ -89,6 +105,17 @@ module Springnote
       end
       
       self
+    end
+    
+    def delete
+      super
+      self.identifier = nil
+    end
+    
+    def identifier=(newval)
+      @hash['identifier'] = newval
+      self.url = element_url
+      newval
     end
     
     def element_url

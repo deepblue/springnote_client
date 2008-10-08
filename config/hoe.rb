@@ -15,7 +15,7 @@ EXTRA_DEPENDENCIES = [
 
 @config_file = "~/.rubyforge/user-config.yml"
 @config = nil
-RUBYFORGE_USERNAME = "unknown"
+RUBYFORGE_USERNAME = "deepblue"
 def rubyforge_username
   unless @config
     begin
